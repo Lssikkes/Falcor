@@ -106,10 +106,14 @@ namespace Falcor
         */
         uint32_t getClientAreaHeight() const { return mHeight; }
 
+        /** Get the window creation descriptor
+        */
+        const Desc& getDescriptor() const { return mDesc; }
     private:
         friend class ApiCallbacks;
         Window(ICallbacks * pCallbacks, uint32_t width, uint32_t height);
 
+        Desc mDesc;
         ApiHandle mApiHandle;
         uint32_t mWidth;
         uint32_t mHeight;

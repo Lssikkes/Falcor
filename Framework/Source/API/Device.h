@@ -97,6 +97,10 @@ namespace Falcor
         */
         bool isWindowOccluded() const;
 
+        /** Check if the window is fullscreen
+        */
+        bool isWindowFullscreen() const;
+
         /** Check if the device support an extension
         */
         bool isExtensionSupported(const std::string & name) const;
@@ -156,6 +160,16 @@ namespace Falcor
         const VkPhysicalDeviceLimits& getPhysicalDeviceLimits() const;
         uint32_t  getDeviceVendorID() const;
 #endif
+
+        /** Get quantity of GPU nodes.
+            \return Number of GPUs associated with this device.
+        */
+        uint32_t getNodeCount() const { return mNodeCount; }
+        
+        /** Get index of active GPU node 
+            \return Zero-based index of which GPU is currently active.
+        */
+        uint32_t getNodeActiveIndex() const { return mNodeActive; }
     private:
         struct ResourceRelease
         {
@@ -189,6 +203,9 @@ namespace Falcor
         double mGpuTimestampFrequency;
         bool mRgb32FloatSupported = true;
         std::vector<CommandQueueHandle> mCmdQueues[kQueueTypeCount];
+
+        uint32_t mNodeCount = 1;
+        uint32_t mNodeActive = 0;
 
         // API specific functions
         bool getApiFboData(uint32_t width, uint32_t height, ResourceFormat colorFormat, ResourceFormat depthFormat, std::vector<ResourceHandle>& apiHandles, uint32_t& currentBackBufferIndex);

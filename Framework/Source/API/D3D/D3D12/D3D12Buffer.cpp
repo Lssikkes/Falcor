@@ -54,6 +54,7 @@ namespace Falcor
 
         D3D12_RESOURCE_STATES d3dState = getD3D12ResourceState(initState);
         ID3D12ResourcePtr pApiHandle;
+
         d3d_call(pDevice->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufDesc, d3dState, nullptr, IID_PPV_ARGS(&pApiHandle)));
 
         // Map and upload data if needed
@@ -87,7 +88,7 @@ namespace Falcor
 
         if (mCpuAccess == CpuAccess::Write)
         {
-            mState = Resource::State::GenericRead;
+            setState(Resource::State::GenericRead, nullptr);
             if(hasInitData == false) // Else the allocation will happen when updating the data
             {
                 mDynamicData = gpDevice->getResourceAllocator()->allocate(mSize, getBufferDataAlignment(this));
@@ -96,13 +97,13 @@ namespace Falcor
         }
         else if (mCpuAccess == CpuAccess::Read && mBindFlags == BindFlags::None)
         {
-            mState = Resource::State::CopyDest;
-            mApiHandle = createBuffer(mState, mSize, kReadbackHeapProps, mBindFlags);
+            setState(Resource::State::CopyDest, nullptr);
+            mApiHandle = createBuffer(mState[0], mSize, kReadbackHeapProps, mBindFlags);
         }
         else
         {
-            mState = Resource::State::Common;
-            mApiHandle = createBuffer(mState, mSize, kDefaultHeapProps, mBindFlags);
+            setState(Resource::State::Common, nullptr);
+            mApiHandle = createBuffer(mState[0], mSize, kDefaultHeapProps, mBindFlags);
         }
 
         return true;

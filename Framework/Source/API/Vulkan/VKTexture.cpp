@@ -130,7 +130,7 @@ namespace Falcor
             imageInfo.arrayLayers *= 6;
         }
 
-        mState = pData ? Resource::State::PreInitialized : Resource::State::Undefined;
+        setState(pData ? Resource::State::PreInitialized : Resource::State::Undefined, nullptr);
 
         VkImage image;
         if (VK_FAILED(vkCreateImage(gpDevice->getApiHandle(), &imageInfo, nullptr, &image)))

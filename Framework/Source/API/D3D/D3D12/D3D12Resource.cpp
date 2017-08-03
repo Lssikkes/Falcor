@@ -36,7 +36,11 @@ namespace Falcor
         D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
         D3D12_MEMORY_POOL_UNKNOWN,
         0,
+#if FALCOR_D3D12_MGPU_AFFINITY
+        ~0UL
+#else
         0
+#endif
     };
 
     const D3D12_HEAP_PROPERTIES kUploadHeapProps =
@@ -45,7 +49,11 @@ namespace Falcor
         D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
         D3D12_MEMORY_POOL_UNKNOWN,
         0,
-        0,
+#if FALCOR_D3D12_MGPU_AFFINITY
+        ~0UL
+#else
+        0
+#endif
     };
 
     const D3D12_HEAP_PROPERTIES kReadbackHeapProps =
@@ -54,7 +62,11 @@ namespace Falcor
         D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
         D3D12_MEMORY_POOL_UNKNOWN,
         0,
+#if FALCOR_D3D12_MGPU_AFFINITY
+        ~0UL
+#else
         0
+#endif
     };
 
     D3D12_RESOURCE_FLAGS getD3D12ResourceFlags(Resource::BindFlags flags)

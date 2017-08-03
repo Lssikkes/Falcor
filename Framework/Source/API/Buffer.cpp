@@ -39,7 +39,7 @@ namespace Falcor
         Buffer::SharedPtr pBuffer = SharedPtr(new Buffer(size, usage, cpuAccess));
         if (pBuffer->apiInit(pInitData != nullptr))
         {
-            if (pInitData) pBuffer->updateData(pInitData, 0, size);
+            if (pInitData) pBuffer->updateData(pInitData, 0, size, 0);
             return pBuffer;
         }
         else return nullptr;
@@ -57,16 +57,29 @@ namespace Falcor
         }
     }
 
-    void Buffer::updateData(const void* pData, size_t offset, size_t size)
+    uint32_t Buffer::updateData(const void* pData, size_t offset, size_t size, uint32_t nodeMask)
     {
         if (mCpuAccess == CpuAccess::Write)
         {
             uint8_t* pDst = (uint8_t*)map(MapType::WriteDiscard) + offset;
             memcpy(pDst, pData, size);
+            
+            return ~0U;
         }
         else
         {
-            gpDevice->getRenderContext()->updateBuffer(this, pData, offset, size);
+            if (nodeMask != 0)
+            {
+                gpDevice->getRenderContext()->pushGpuAffinity(nodeMask);
+                gpDevice->getRenderContext()->updateBuffer(this, pData, offset, size);
+                gpDevice->getRenderContext()->popGpuAffinity();
+                return nodeMask;
+            }
+            else
+            {
+                gpDevice->getRenderContext()->updateBuffer(this, pData, offset, size);
+                return gpDevice->getRenderContext()->getGpuAffinity();
+            }
         }
     }
 

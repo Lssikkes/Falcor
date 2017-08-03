@@ -84,9 +84,10 @@ namespace Falcor
             \param[in] pData Pointer to the source data.
             \param[in] offset Byte offset into the destination buffer, indicating where to start copy into.
             \param[in] size Number of bytes to copy.
+            \return A mask specifying which GPU nodes it has updated.
             If offset and size will cause an out-of-bound access to the buffer, an error will be logged and the update will fail.
         */
-        void updateData(const void* pData, size_t offset, size_t size);
+        uint32_t updateData(const void* pData, size_t offset, size_t size, uint32_t nodeMask);
 
         /** Get the offset from the beginning of the GPU resource
         */

@@ -96,7 +96,7 @@ namespace Falcor
         auto deadListReflect = pEmitReflect->getBufferDesc("deadList", ProgramReflection::BufferReflection::Type::Structured);
         mpDeadList = StructuredBuffer::create(deadListReflect, mMaxParticles);
         //init data in dead list buffer
-        mpDeadList->getUAVCounter()->updateData(&mMaxParticles, 0, sizeof(uint32_t));
+        mpDeadList->getUAVCounter()->updateData(&mMaxParticles, 0, sizeof(uint32_t), ~0);
         std::vector<uint32_t> indices;
         indices.resize(mMaxParticles);
         uint32_t counter = 0;
@@ -223,14 +223,14 @@ namespace Falcor
 
         //reset alive list counter to 0
         uint32_t zero = 0;
-        mpAliveList->getUAVCounter()->updateData(&zero, 0, sizeof(uint32_t));
+        mpAliveList->getUAVCounter()->updateData(&zero, 0, sizeof(uint32_t), 0);
 
         pCtx->pushComputeState(mSimulateResources.pState);
         pCtx->pushComputeVars(mSimulateResources.pVars);
         pCtx->dispatch(max(mMaxParticles / mSimulateThreads, 1u), 1, 1);
         pCtx->popComputeVars();
         pCtx->popComputeState();
-    }
+	}
 
     void ParticleSystem::render(RenderContext* pCtx, glm::mat4 view, glm::mat4 proj)
     {
@@ -264,6 +264,13 @@ namespace Falcor
         pCtx->drawIndirect(mpIndirectArgs.get(), 0);
         pCtx->popGraphicsVars();
         pCtx->popGraphicsState();
+
+        pCtx->broadcastResource(mpParticlePool.get(), mpParticlePool.get(), ~0);
+        pCtx->broadcastResource(mpDeadList.get(), mpDeadList.get(), ~0);
+        pCtx->broadcastResource(mpDeadList->getUAVCounter().get(), mpDeadList->getUAVCounter().get(), ~0);
+        pCtx->broadcastResource(mpAliveList.get(), mpAliveList.get(), ~0);
+        pCtx->broadcastResource(mpAliveList->getUAVCounter().get(), mpAliveList->getUAVCounter().get(), ~0);
+        pCtx->broadcastResource(mpIndirectArgs.get(), mpIndirectArgs.get(), ~0);
     }
 
     void ParticleSystem::renderUi(Gui* pGui)

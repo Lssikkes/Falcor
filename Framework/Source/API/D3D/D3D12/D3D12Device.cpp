@@ -95,7 +95,7 @@ namespace Falcor
         return (D3D_FEATURE_LEVEL)0;
     }
 
-    IDXGISwapChain3Ptr createDxgiSwapChain(IDXGIFactory4* pFactory, const Window* pWindow, ID3D12CommandQueue* pCommandQueue, ResourceFormat colorFormat)
+    IDXGISwapChain3Ptr createDxgiSwapChain(IDXGIFactory4* pFactory, const Window* pWindow, ID3D12CommandQueue* pCommandQueue, ResourceFormat colorFormat, bool fullscreen)
     {
         DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
         swapChainDesc.BufferCount = kSwapChainBuffers;
@@ -107,28 +107,48 @@ namespace Falcor
         swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         swapChainDesc.SampleDesc.Count = 1;
-
+        
+        DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsdesc;
+        fsdesc.Windowed = fullscreen?FALSE:TRUE ;
+        fsdesc.RefreshRate.Numerator = 0;
+        fsdesc.RefreshRate.Denominator = 1;
+        fsdesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+        fsdesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+        
         // CreateSwapChainForHwnd() doesn't accept IDXGISwapChain3 (Why MS? Why?)
         MAKE_SMART_COM_PTR(IDXGISwapChain1);
         IDXGISwapChain1Ptr pSwapChain;
 
-        HRESULT hr = pFactory->CreateSwapChainForHwnd(pCommandQueue, pWindow->getApiHandle(), &swapChainDesc, nullptr, nullptr, &pSwapChain);
+#if FALCOR_D3D12_MGPU_AFFINITY
+        HRESULT hr = pFactory->CreateSwapChainForHwnd(pCommandQueue->GetChildObject(0), pWindow->getApiHandle(), &swapChainDesc, &fsdesc, nullptr, &pSwapChain);
+#else
+        HRESULT hr = pFactory->CreateSwapChainForHwnd(pCommandQueue, pWindow->getApiHandle(), &swapChainDesc, &fsdesc, nullptr, &pSwapChain);
+#endif
         if (FAILED(hr))
         {
             d3dTraceHR("Failed to create the swap-chain", hr);
             return false;
         }
 
-        IDXGISwapChain3Ptr pSwapChain3;
-        d3d_call(pSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3)));
-        return pSwapChain3;
+#if FALCOR_D3D12_MGPU_AFFINITY
+		IDXGISwapChain3Ptr retVal;
+		if (FAILED(hr=DXGIXAffinityCreateLDASwapChain((IDXGISwapChain3*)pSwapChain.GetInterfacePtr(), pCommandQueue, pCommandQueue->GetParentDevice(), &retVal.GetInterfacePtr())))
+		{
+			d3dTraceHR("Failed to create the swap-chain", hr);
+		}
+		return retVal;
+#else
+ 		IDXGISwapChain3Ptr pSwapChain3;
+ 		d3d_call(pSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3)));
+ 		return pSwapChain3;
+#endif
     }
 
     ID3D12DevicePtr createDevice(IDXGIFactory4* pFactory, D3D_FEATURE_LEVEL featureLevel, Device::Desc::CreateDeviceFunc createFunc, bool& rgb32FSupported)
     {
         // Find the HW adapter
         IDXGIAdapter1Ptr pAdapter;
-        ID3D12DevicePtr pDevice;
+        ID3D12RealDevicePtr pDevice;
 
         for (uint32_t i = 0; DXGI_ERROR_NOT_FOUND != pFactory->EnumAdapters1(i, &pAdapter); i++)
         {
@@ -147,10 +167,22 @@ namespace Falcor
                 pDevice = createFunc(pAdapter, featureLevel);
                 if (pDevice) return pDevice;
             }
-            else if (D3D12CreateDevice(pAdapter, featureLevel, IID_PPV_ARGS(&pDevice)) == S_OK)
+            else if (D3D12CreateDevice(pAdapter, featureLevel, IID_PPV_ARGS(&pDevice)) != S_OK)
             {
-				rgb32FSupported = (desc.VendorId != 0x1002); // The AMD cards I tried can't handle 96-bits textures correctly
+                pDevice = nullptr;           
+            }
+            
+            if(pDevice)
+            {
+                rgb32FSupported = (desc.VendorId != 0x1002); // The AMD cards I tried can't handle 96-bits textures correctly
+                
+#if FALCOR_D3D12_MGPU_AFFINITY
+                CD3DX12AffinityDevice* pMGPUDevice = nullptr;
+                D3DX12AffinityCreateLDADevice(pDevice.GetInterfacePtr(), &pMGPUDevice);
+                return pMGPUDevice;
+#else
                 return pDevice;
+#endif
             }
         }
 
@@ -203,7 +235,14 @@ namespace Falcor
     void Device::apiPresent()
     {
         mpApiData->pSwapChain->Present(mVsyncOn ? 1 : 0, 0);
-        mCurrentBackBufferIndex = (mCurrentBackBufferIndex + 1) % kSwapChainBuffers;
+        
+#if FALCOR_D3D12_MGPU_AFFINITY
+		// Switch to next GPU
+		mApiHandle->SwitchToNextNode();
+		mNodeActive = mApiHandle->GetActiveNodeIndex();
+#endif
+
+        mCurrentBackBufferIndex = mpApiData->pSwapChain->GetCurrentBackBufferIndex();
     }
 
     bool Device::apiInit(const Desc& desc)
@@ -258,7 +297,7 @@ namespace Falcor
 
     bool Device::createSwapChain(ResourceFormat colorFormat)
     {
-        mpApiData->pSwapChain = createDxgiSwapChain(mpApiData->pDxgiFactory, mpWindow.get(), mpRenderContext->getLowLevelData()->getCommandQueue(), colorFormat);
+        mpApiData->pSwapChain = createDxgiSwapChain(mpApiData->pDxgiFactory, mpWindow.get(), mpRenderContext->getLowLevelData()->getCommandQueue(), colorFormat, false);
         if (mpApiData->pSwapChain == nullptr)
         {
             return false;

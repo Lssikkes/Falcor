@@ -105,7 +105,7 @@ namespace Falcor
 
         /** Get the current state
         */
-        State getState() const { return mState; }
+        State getState() const;
 
         /** Get the resource type
         */
@@ -162,11 +162,12 @@ namespace Falcor
     protected:
         friend class CopyContext;
 
-        Resource(Type type, BindFlags bindFlags) : mType(type), mBindFlags(bindFlags) {}
+        Resource(Type type, BindFlags bindFlags);
+        void setState(State state, CopyContext* context) const;
 
         Type mType;
         BindFlags mBindFlags;
-        mutable State mState = State::Undefined;
+        mutable State mState[FALCOR_D3D12_MGPU_MAX_GPUS];
         ApiHandle mApiHandle;
 
         mutable std::unordered_map<ResourceViewInfo, ShaderResourceView::SharedPtr, ViewInfoHashFunc> mSrvs;

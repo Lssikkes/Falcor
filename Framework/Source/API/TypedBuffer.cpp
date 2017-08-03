@@ -45,7 +45,8 @@ namespace Falcor
         {
             return false;
         }
-        updateData(mData.data(), 0, mSize);
+
+        updateData(mData.data(), 0, mSize, 0);
         mCpuDirty = false;
         return true;
     }

@@ -96,7 +96,7 @@ namespace Falcor
 
     bool VariablesBuffer::uploadToGPU(size_t offset, size_t size)
     {
-        if(mDirty == false)
+        if( ( mDirty  & gpDevice->getRenderContext()->getGpuAffinity() ) == 0)
         {
             return false;
         }
@@ -112,8 +112,8 @@ namespace Falcor
             return false;
         }
 
-        updateData(mData.data(), offset, size);
-        mDirty = false;
+        // Remove dirty flags for GPUs corresponding to updateData return value.
+        mDirty &= ~updateData(mData.data(), offset, size, mDirty);
         return true;
     }
 
@@ -203,7 +203,7 @@ namespace Falcor
         {
             const uint8_t* pVar = mData.data() + offset + elementIndex * mElementSize;
             *(VarType*)pVar = value;
-            mDirty = true;
+            mDirty = ~0;
         }
     }
 
@@ -305,7 +305,7 @@ namespace Falcor
             {
                 pData[i] = pValue[i];
             }
-            mDirty = true;
+            mDirty = ~0;
         }
     }
 
@@ -406,7 +406,7 @@ namespace Falcor
             return;
         }
         memcpy(mData.data() + offset, pSrc, size);
-        mDirty = true;
+        mDirty = ~0;
     }
 
     bool checkResourceDimension(const Texture* pTexture, const ProgramReflection::Resource* pResourceDesc, const std::string& name, const std::string& bufferName)
@@ -561,7 +561,7 @@ namespace Falcor
 
         if(bOK)
         {
-            mDirty = true;
+            mDirty = ~0;
             setTextureInternal(offset, pTexture, pSampler);
         }
     }

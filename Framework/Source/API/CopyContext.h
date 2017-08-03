@@ -30,6 +30,7 @@
 #ifdef FALCOR_LOW_LEVEL_API
 #include "API/LowLevel/LowLevelContextData.h"
 #endif
+#include <stack>
 
 namespace Falcor
 {
@@ -92,12 +93,35 @@ namespace Falcor
         */
         void setLowLevelContextData(LowLevelContextData::SharedPtr pLowLevelData) { mpLowLevelData = pLowLevelData; }
 #endif
+        /** Annotations for debugging tools
+        */
+        void beginEvent(const char* eventData);
+        void endEvent();
+        
+        /** Multi-GPU affinity support (set/get to which GPU nodes to transmit commands)
+        */
+        uint32_t getGpuAffinity();
+        void setGpuAffinity(uint32_t affinityMask);
+        void pushGpuAffinity(uint32_t newMask) { mAffinityStack.push(getGpuAffinity()); setGpuAffinity(newMask); }
+        void popGpuAffinity() {	setGpuAffinity(mAffinityStack.top()); mAffinityStack.pop(); }
+        
+        /** Broadcast an entire resource to another GPU
+        */
+        void broadcastResource(const Resource* pDst, const Resource* pSrc, uint32 destMask);
+        
+        /** Broadcast part of a buffer to another GPU
+        */
+        void broadcastBufferRegion(const Resource* pDst, uint64_t dstOffset, const Resource* pSrc, uint64_t srcOffset, uint64_t numBytes, uint32 destMask);
+
     protected:
         void bindDescriptorHeaps();
         CopyContext() = default;
         bool mCommandsPending = false;
+        std::stack<uint32_t> mAffinityStack;
 #ifdef FALCOR_LOW_LEVEL_API
         LowLevelContextData::SharedPtr mpLowLevelData;
 #endif
     };
+
+
 }

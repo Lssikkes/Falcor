@@ -29,10 +29,27 @@
 #include "Framework.h"
 #include "Resource.h"
 #include "Texture.h"
+#include "Device.h"
 
 namespace Falcor
 {
     Resource::~Resource() = default;
+
+    Falcor::Resource::State Resource::getState() const
+    {
+        return mState[gpDevice->getNodeActiveIndex()];
+    }
+    
+    void Resource::setState(State state, CopyContext* context) const
+    {
+        uint32 affinity = context?context->getGpuAffinity():(~0UL);
+        for (int i = 0; i < FALCOR_D3D12_MGPU_MAX_GPUS; i++)
+        {
+            if ((affinity & (1 << i)) != 0)
+                mState[i] = state;
+        }
+    }
+
 
     const std::string to_string(Resource::Type type)
     {
@@ -213,5 +230,11 @@ namespace Falcor
         mUavs.clear();
         mRtvs.clear();
         mDsvs.clear();
+    }
+
+    Resource::Resource(Type type, BindFlags bindFlags) : mType(type), mBindFlags(bindFlags)
+    {
+        for (int i = 0; i < sizeof(mState) / sizeof(mState[0]); i++)
+            mState[i] = State::Common;
     }
 }

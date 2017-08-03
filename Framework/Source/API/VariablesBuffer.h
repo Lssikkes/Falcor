@@ -103,7 +103,7 @@ namespace Falcor
 
         ProgramReflection::BufferReflection::SharedConstPtr mpReflector;
         std::vector<uint8_t> mData;
-        mutable bool mDirty = true;
+        mutable uint32_t mDirty = 0xffffffff;
         size_t mElementCount;
         size_t mElementSize;
     };

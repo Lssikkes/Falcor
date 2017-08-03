@@ -42,6 +42,9 @@
 #define FALCOR_BUILD_SLANG                  1 // Set this to 1 to enable Slang compiler to be built into Falcor
 #define FALCOR_USE_SLANG_AS_PREPROCESSOR    0 // Set this to 1 to use Slang as a source-to-source preprocessor
 
+#define FALCOR_D3D12_MGPU_AFFINITY			0
+#define FALCOR_D3D12_MGPU_MAX_GPUS			4
+
 #if (FALCOR_USE_SLANG_AS_PREPROCESSOR) && !FALCOR_BUILD_SLANG
 #error Trying to use Slang without building it
 #endif

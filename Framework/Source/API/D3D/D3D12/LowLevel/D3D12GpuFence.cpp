@@ -29,6 +29,12 @@
 #include "API/LowLevel/GpuFence.h"
 #include "API/Device.h"
 
+#if FALCOR_D3D12_MGPU_AFFINITY
+#define ADD_AFFINITY(x) ,x
+#else
+#define ADD_AFFINITY(x)
+#endif
+
 namespace Falcor
 {
     GpuFence::~GpuFence()
@@ -40,7 +46,7 @@ namespace Falcor
     {
         SharedPtr pFence = SharedPtr(new GpuFence());
         pFence->mEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        ID3D12Device* pDevice = gpDevice->getApiHandle().GetInterfacePtr();
+        auto* pDevice = gpDevice->getApiHandle().GetInterfacePtr();
 
         HRESULT hr = pDevice->CreateFence(pFence->mCpuValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence->mApiHandle));
         pFence->mCpuValue++;
@@ -55,14 +61,14 @@ namespace Falcor
 
     uint64_t GpuFence::gpuSignal(CommandQueueHandle pQueue)
     {
-        d3d_call(pQueue->Signal(mApiHandle, mCpuValue));
+        d3d_call(pQueue->Signal(mApiHandle, mCpuValue ADD_AFFINITY(mAffinityMask)));
         mCpuValue++;
         return mCpuValue - 1;
     }
 
     void GpuFence::syncGpu(CommandQueueHandle pQueue)
     {
-        d3d_call(pQueue->Wait(mApiHandle, mCpuValue - 1));
+        d3d_call(pQueue->Wait(mApiHandle, mCpuValue - 1 ADD_AFFINITY(mAffinityMask)));
     }
 
     void GpuFence::syncCpu()
@@ -70,13 +76,17 @@ namespace Falcor
         uint64_t gpuVal = getGpuValue();
         if (gpuVal < mCpuValue - 1)
         {
-            d3d_call(mApiHandle->SetEventOnCompletion(mCpuValue - 1, mEvent));
+            d3d_call(mApiHandle->SetEventOnCompletion(mCpuValue - 1, mEvent ADD_AFFINITY(mAffinityMask)));
             WaitForSingleObject(mEvent, INFINITE);
         }
     }
 
     uint64_t GpuFence::getGpuValue() const
     {
+#if FALCOR_D3D12_MGPU_AFFINITY
+        return mApiHandle->GetCompletedValue(mAffinityMask);
+#else
         return mApiHandle->GetCompletedValue();
+#endif
     }
 }

@@ -49,7 +49,7 @@ namespace Falcor
 
     QueryHeap::QueryHeap(Type type, uint32_t count) : mType(type), mCount(count)
     {
-        ID3D12Device* pDevice = gpDevice->getApiHandle().GetInterfacePtr();
+        auto* pDevice = gpDevice->getApiHandle().GetInterfacePtr();
         D3D12_QUERY_HEAP_DESC desc;
         desc.Count = count;
         desc.NodeMask = 0;

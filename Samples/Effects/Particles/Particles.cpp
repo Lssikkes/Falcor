@@ -49,6 +49,9 @@ void Particles::onGuiRender()
 
 void Particles::onLoad()
 {
+    // Set to broadcast to all GPUs
+    mpRenderContext->pushGpuAffinity(~0);
+
     mpCamera = Camera::create();
     mpCamera->setPosition(mpCamera->getPosition() + glm::vec3(0, 5, 10));
     mpCamController.attachCamera(mpCamera);
@@ -60,12 +63,15 @@ void Particles::onLoad()
         BlendState::BlendFunc::SrcAlpha, BlendState::BlendFunc::OneMinusSrcAlpha);
     BlendState::SharedPtr pBlend = BlendState::create(blendDesc);
     mpRenderContext->getGraphicsState()->setBlendState(pBlend);
+
+    // Restore broadcast to active GPU
+    mpRenderContext->popGpuAffinity();
 }
 
 void Particles::onFrameRender()
 {
-	const glm::vec4 clearColor(0.38f, 0.52f, 0.10f, 1);
- 	mpRenderContext->clearFbo(mpDefaultFBO.get(), clearColor, 1.0f, 0, FboAttachmentType::All);
+    const glm::vec4 clearColor(0.38f, 0.52f, 0.10f, 1);
+    mpRenderContext->clearFbo(mpDefaultFBO.get(), clearColor, 1.0f, 0, FboAttachmentType::All);
     mpCamController.update();
 
     for (auto it = mpParticleSystems.begin(); it != mpParticleSystems.end(); ++it)
@@ -242,5 +248,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     SampleConfig config;
     config.windowDesc.title = "Particles";
     config.windowDesc.resizableWindow = true;
+    config.windowDesc.width = 1920;
+    config.windowDesc.height = 1080;
     sample.run(config);
 }

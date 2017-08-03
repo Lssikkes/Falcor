@@ -55,7 +55,7 @@ namespace Falcor
             }
             else
             {
-				pWindow = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+                pWindow = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
                 switch(msg)
                 {
                 case WM_CLOSE:
@@ -96,8 +96,8 @@ namespace Falcor
             GetClientRect(pWindow->getApiHandle(), &r);
             uint32_t width = r.right - r.left;
             uint32_t height = r.bottom - r.top;
-			pWindow->resize(width, height);
-		}
+            pWindow->resize(width, height);
+        }
 
         static KeyboardEvent::Key translateKeyCode(WPARAM keyCode)
         {
@@ -367,16 +367,16 @@ namespace Falcor
 
     Window::SharedPtr Window::create(const Desc& desc, ICallbacks* pCallbacks)
     {
-		SharedPtr pWindow = SharedPtr(new Window(pCallbacks, desc.width, desc.height));
-        
+        SharedPtr pWindow = SharedPtr(new Window(pCallbacks, desc.width, desc.height));
+        pWindow->mDesc = desc;
         // create the window
-		pWindow->mApiHandle = createWindow(desc, pWindow.get());
+        pWindow->mApiHandle = createWindow(desc, pWindow.get());
         if(pWindow->mApiHandle == nullptr)
         {
             return false;
         }
-
-		return pWindow;
+    
+        return pWindow;
     }
 
     void Window::resize(uint32_t width, uint32_t height)
@@ -421,14 +421,14 @@ namespace Falcor
             }
             else
             {
-				mpCallbacks->renderFrame();
+                mpCallbacks->renderFrame();
             }
         }
     }
 
     void Window::setWindowTitle(std::string title)
     {
-		    }
+    }
 
     void Window::pollForEvents()
     {

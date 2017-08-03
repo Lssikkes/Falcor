@@ -251,17 +251,17 @@ namespace Falcor
                 VkImageMemoryBarrier barrier = {};
                 barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
                 barrier.newLayout = getImageLayout(newState);
-                barrier.oldLayout = getImageLayout(pResource->mState);
+                barrier.oldLayout = getImageLayout(pResource->getState());
                 barrier.image = pResource->getApiHandle();
                 barrier.subresourceRange.aspectMask = getAspectFlagsFromFormat(pTexture->getFormat());
                 barrier.subresourceRange.baseArrayLayer = 0;
                 barrier.subresourceRange.baseMipLevel = 0;
                 barrier.subresourceRange.layerCount = pTexture->getArraySize();
                 barrier.subresourceRange.levelCount = pTexture->getMipCount();
-                barrier.srcAccessMask = getAccessMask(pResource->mState);
+                barrier.srcAccessMask = getAccessMask(pResource->getState());
                 barrier.dstAccessMask = getAccessMask(newState);
 
-                vkCmdPipelineBarrier(mpLowLevelData->getCommandList(), getShaderStageMask(pResource->mState, true), getShaderStageMask(newState, false), 0, 0, nullptr, 0, nullptr, 1, &barrier);
+                vkCmdPipelineBarrier(mpLowLevelData->getCommandList(), getShaderStageMask(pResource->getState(), true), getShaderStageMask(newState, false), 0, 0, nullptr, 0, nullptr, 1, &barrier);
             }
             else
             {
@@ -269,17 +269,17 @@ namespace Falcor
                 assert(pBuffer);
                 VkBufferMemoryBarrier barrier = {};
                 barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-                barrier.srcAccessMask = getAccessMask(pResource->mState);
+                barrier.srcAccessMask = getAccessMask(pResource->getState());
                 barrier.dstAccessMask = getAccessMask(newState);
                 barrier.buffer = pBuffer->getApiHandle();
                 barrier.offset = pBuffer->getGpuAddressOffset();
                 barrier.size = pBuffer->getSize();
 
-                vkCmdPipelineBarrier(mpLowLevelData->getCommandList(), getShaderStageMask(pResource->mState, true), getShaderStageMask(newState, false), 0, 0, nullptr, 1, &barrier, 0, nullptr);
+                vkCmdPipelineBarrier(mpLowLevelData->getCommandList(), getShaderStageMask(pResource->getState(), true), getShaderStageMask(newState, false), 0, 0, nullptr, 1, &barrier, 0, nullptr);
             }
 
 
-            pResource->mState = newState;
+			pResource->setState(newState, this);
             mCommandsPending = true;
         }
     }
@@ -364,5 +364,14 @@ namespace Falcor
 
         vkCmdCopyBuffer(mpLowLevelData->getCommandList(), pSrc->getApiHandle(), pDst->getApiHandle(), 1, &region);
         mCommandsPending = true;
+    }
+
+    uint32_t CopyContext::getGpuAffinity()
+    {
+        return 1;
+    }
+    
+    void CopyContext::setGpuAffinity(uint32_t affinityMask)
+    {
     }
 }

@@ -37,19 +37,24 @@ namespace Falcor
 {
     void CopyContext::bindDescriptorHeaps()
     {
+        pushGpuAffinity(~0);
+        
         const DescriptorPool* pGpuPool = gpDevice->getGpuDescriptorPool().get();
         const DescriptorPool::ApiData* pData = pGpuPool->getApiData();
+
         ID3D12DescriptorHeap* pHeaps[arraysize(pData->pHeaps)];
         uint32_t heapCount = 0;
         for (uint32_t i = 0; i < arraysize(pData->pHeaps); i++)
         {
             if (pData->pHeaps[i])
             {
-                pHeaps[heapCount] = pData->pHeaps[i]->getApiHandle();
+                pHeaps[heapCount] = pData->pHeaps[i]->getApiHandle().GetInterfacePtr();
                 heapCount++;
             }
         }
         mpLowLevelData->getCommandList()->SetDescriptorHeaps(heapCount, pHeaps);
+        
+        popGpuAffinity();
     }
     
     void copySubresourceData(const D3D12_SUBRESOURCE_DATA& srcData, const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& dstFootprint, uint8_t* pDstStart, uint64_t rowSize, uint64_t rowsToCopy)
@@ -152,7 +157,7 @@ namespace Falcor
 
         //Get buffer data
         std::vector<uint8> result;
-		uint32_t actualRowSize = footprint.Footprint.Width * getFormatBytesPerBlock(pTexture->getFormat());
+        uint32_t actualRowSize = footprint.Footprint.Width * getFormatBytesPerBlock(pTexture->getFormat());
         result.resize(rowCount * actualRowSize);
         uint8* pData = reinterpret_cast<uint8*>(pBuffer->map(Buffer::MapType::Read));
 
@@ -190,9 +195,11 @@ namespace Falcor
 
             mpLowLevelData->getCommandList()->ResourceBarrier(1, &barrier);
             mCommandsPending = true;
-            pResource->mState = newState;
+
+            pResource->setState(newState, this);
         }
     }
+
 
     void CopyContext::copyResource(const Resource* pDst, const Resource* pSrc)
     {
@@ -228,5 +235,45 @@ namespace Falcor
         resourceBarrier(pSrc, Resource::State::CopySource);
         mpLowLevelData->getCommandList()->CopyBufferRegion(pDst->getApiHandle(), dstOffset, pSrc->getApiHandle(), pSrc->getGpuAddressOffset() + srcOffset, numBytes);    
         mCommandsPending = true;
+    }
+    
+    void CopyContext::beginEvent(const char* eventData)
+    {
+        mpLowLevelData->getCommandList()->BeginEvent(0, eventData, (UINT)strlen(eventData) + 1U);
+    }
+
+    void CopyContext::endEvent()
+    {
+        mpLowLevelData->getCommandList()->EndEvent();
+    }
+
+    uint32_t CopyContext::getGpuAffinity()
+    {
+#if FALCOR_D3D12_MGPU_AFFINITY
+        return mpLowLevelData->getCommandList()->GetAffinityMask();
+#else
+        return 1;
+#endif
+    }
+
+    void CopyContext::setGpuAffinity(uint32_t affinityMask)
+    {
+#if FALCOR_D3D12_MGPU_AFFINITY
+        mpLowLevelData->getCommandList()->SetAffinity(affinityMask);
+#endif
+    }
+
+    void CopyContext::broadcastResource(const Resource* pDst, const Resource* pSrc, uint32 destMask)
+    {
+#if FALCOR_D3D12_MGPU_AFFINITY
+        DEBUG_ASSERT(pDst->getState() == Resource::State::CopyDest); // destination resource must have been left on the other GPU in CopyDest state!
+
+        resourceBarrier(pSrc, Resource::State::CopySource);
+        destMask &= (~mpLowLevelData->getCommandList()->GetAffinityMask()); // remove current GPU from destination mask
+        mpLowLevelData->getCommandList()->BroadcastResource(pDst->getApiHandle(), pSrc->getApiHandle(), mpLowLevelData->getCommandList()->GetActiveNodeIndex(), destMask);
+
+        resourceBarrier(pSrc, Resource::State::CopyDest);
+        mCommandsPending = true;
+#endif
     }
 }

@@ -37,7 +37,22 @@
 #define FALCOR_D3D
 #endif
 
+#if defined(_COM_SMARTPTR)
+#if !defined(_COM_SMARTPTR_TYPEDEF_ALIAS)
+#if defined(_COM_SMARTPTR_LEVEL2)
+#define _COM_SMARTPTR_TYPEDEF_ALIAS(Interface, IID, Alias) \
+    typedef _COM_SMARTPTR<_COM_SMARTPTR_LEVEL2<Interface, &IID> > \
+            Alias ## Ptr
+#else
+#define _COM_SMARTPTR_TYPEDEF_ALIAS(Interface, IID, Alias) \
+    typedef _COM_SMARTPTR<Interface, &IID> \
+            Alias ## Ptr
+#endif
+#endif
+#endif
+
 #define MAKE_SMART_COM_PTR(_a) _COM_SMARTPTR_TYPEDEF(_a, __uuidof(_a))
+#define MAKE_SMART_COM_PTR_ALIAS(_a, _alias) _COM_SMARTPTR_TYPEDEF_ALIAS(_a, __uuidof(_a), _alias)
 
 __forceinline BOOL dxBool(bool b) { return b ? TRUE : FALSE; }
 
@@ -110,7 +125,11 @@ namespace Falcor
     void d3dTraceHR(const std::string& Msg, HRESULT hr);
 
     // DXGI
+#if FALCOR_D3D12_MGPU_AFFINITY
+    MAKE_SMART_COM_PTR_ALIAS(CDXGIAffinitySwapChain, IDXGISwapChain3);
+#else
     MAKE_SMART_COM_PTR(IDXGISwapChain3);
+#endif
     MAKE_SMART_COM_PTR(IDXGIDevice);
     MAKE_SMART_COM_PTR(IDXGIAdapter1);
     MAKE_SMART_COM_PTR(IDXGIFactory4);

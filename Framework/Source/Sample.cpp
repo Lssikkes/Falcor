@@ -213,6 +213,9 @@ namespace Falcor
         mpRenderContext = gpDevice->getRenderContext();
         mpRenderContext->setGraphicsState(mpDefaultPipelineState);
 
+        // Broadcast to all GPUs
+        mpRenderContext->pushGpuAffinity(~0);
+
         // Init the UI
         initUI();
 
@@ -220,6 +223,9 @@ namespace Falcor
         mArgList.parseCommandLine(GetCommandLineA());
         mpPixelZoom = PixelZoom::create(mpDefaultFBO.get());
 
+        // Stop broadcasting to all GPUs
+        mpRenderContext->popGpuAffinity();
+        
         onLoad();
         pBar = nullptr;
         mFrameRate.resetClock();

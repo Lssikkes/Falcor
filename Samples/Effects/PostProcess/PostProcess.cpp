@@ -69,6 +69,8 @@ void PostProcess::onLoad()
 
 void PostProcess::loadImage()
 {
+    mpRenderContext->pushGpuAffinity(~0);
+
     std::string filename;
     switch(mHdrImageIndex)
     {
@@ -85,6 +87,8 @@ void PostProcess::loadImage()
 
     mHdrImage = createTextureFromFile(filename, false, false, Resource::BindFlags::ShaderResource);
     mpSkyBox = SkyBox::create(mHdrImage, mpTriLinearSampler);
+
+    mpRenderContext->popGpuAffinity();
 }
 
 void PostProcess::onGuiRender()

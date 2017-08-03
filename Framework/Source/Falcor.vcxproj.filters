@@ -531,6 +531,11 @@
     <ClCompile Include="Effects\TAA\TAA.cpp">
       <Filter>Effects\TAA</Filter>
     </ClCompile>
+    <ClCompile Include="..\Externals\D3dxAffinity\CD3DX12Utils.cpp" />
+    <ClCompile Include="..\Externals\D3dxAffinity\d3dx12affinity.cpp" />
+    <ClCompile Include="..\Externals\D3dxAffinity\D3DX12AffinityCreateMultiDevice.cpp" />
+    <ClCompile Include="..\Externals\D3dxAffinity\DXGIXAffinityCreateLDASwapChain.cpp" />
+    <ClCompile Include="..\Externals\D3dxAffinity\DXGIXAffinityCreateSingleWindowSwapChain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Graphics\Model\Animation.h">
@@ -2263,5 +2268,22 @@
     <None Include="Data\Framework\Shaders\TextRenderer.ps.slang">
       <Filter>Data\Framework\Shaders</Filter>
     </None>
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityCommandAllocator.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityCommandList.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityCommandQueue.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityCommandSignature.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityDescriptorHeap.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\cd3dx12affinitydevice.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityDeviceChild.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityFence.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityGraphicsCommandList.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityHeap.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityObject.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityPageable.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityPipelineState.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityQueryHeap.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityResource.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\CD3DX12AffinityRootSignature.inl" />
+    <None Include="..\Externals\D3dxAffinity\d3dxaffinity\cdxgiaffinityswapchain.inl" />
   </ItemGroup>
 </Project>

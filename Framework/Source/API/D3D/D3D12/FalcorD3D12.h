@@ -27,7 +27,14 @@
 ***************************************************************************/
 #pragma once
 #define NOMINMAX
+
+#if FALCOR_D3D12_MGPU_AFFINITY
+#include <d3dx12affinity.h>
+#include <d3dx12affinity_d3dx12.h>
+#else
 #include <d3d12.h>
+#endif
+
 
 namespace Falcor
 {
@@ -38,8 +45,9 @@ namespace Falcor
     */
 
     // Device
+#if FALCOR_D3D12_MGPU_AFFINITY == 0
+    MAKE_SMART_COM_PTR_ALIAS(ID3D12Device, ID3D12RealDevice);
     MAKE_SMART_COM_PTR(ID3D12Device);
-    MAKE_SMART_COM_PTR(ID3D12Debug);
     MAKE_SMART_COM_PTR(ID3D12CommandQueue);
     MAKE_SMART_COM_PTR(ID3D12CommandAllocator);
     MAKE_SMART_COM_PTR(ID3D12GraphicsCommandList);
@@ -47,10 +55,26 @@ namespace Falcor
     MAKE_SMART_COM_PTR(ID3D12Resource);
     MAKE_SMART_COM_PTR(ID3D12Fence);
     MAKE_SMART_COM_PTR(ID3D12PipelineState);
-    MAKE_SMART_COM_PTR(ID3D12ShaderReflection);
     MAKE_SMART_COM_PTR(ID3D12RootSignature);
     MAKE_SMART_COM_PTR(ID3D12QueryHeap);
     MAKE_SMART_COM_PTR(ID3D12CommandSignature);
+#else
+    MAKE_SMART_COM_PTR_ALIAS(ID3D12Device						,ID3D12RealDevice			);
+    MAKE_SMART_COM_PTR_ALIAS(CD3DX12AffinityDevice				,ID3D12Device				);
+    MAKE_SMART_COM_PTR_ALIAS(CD3DX12AffinityCommandQueue		,ID3D12CommandQueue			);
+    MAKE_SMART_COM_PTR_ALIAS(CD3DX12AffinityCommandAllocator	,ID3D12CommandAllocator		);
+    MAKE_SMART_COM_PTR_ALIAS(CD3DX12AffinityGraphicsCommandList	,ID3D12GraphicsCommandList	);
+    MAKE_SMART_COM_PTR_ALIAS(CD3DX12AffinityDescriptorHeap		,ID3D12DescriptorHeap		);
+    MAKE_SMART_COM_PTR_ALIAS(CD3DX12AffinityResource			,ID3D12Resource				);
+    MAKE_SMART_COM_PTR_ALIAS(CD3DX12AffinityFence				,ID3D12Fence				);
+    MAKE_SMART_COM_PTR_ALIAS(CD3DX12AffinityPipelineState		,ID3D12PipelineState		);
+    MAKE_SMART_COM_PTR_ALIAS(CD3DX12AffinityRootSignature		,ID3D12RootSignature		);
+    MAKE_SMART_COM_PTR_ALIAS(CD3DX12AffinityQueryHeap			,ID3D12QueryHeap			);
+    MAKE_SMART_COM_PTR_ALIAS(CD3DX12AffinityCommandSignature	,ID3D12CommandSignature		);
+#endif
+
+    MAKE_SMART_COM_PTR(ID3D12Debug);
+    MAKE_SMART_COM_PTR(ID3D12ShaderReflection);
     MAKE_SMART_COM_PTR(IUnknown);
     
     using ApiObjectHandle = IUnknownPtr;
@@ -60,10 +84,10 @@ namespace Falcor
 
     class DescriptorHeapEntry;
 
-	using WindowHandle = HWND;
-	using DeviceHandle = ID3D12DevicePtr;
-	using CommandListHandle = ID3D12GraphicsCommandListPtr;
-	using CommandQueueHandle = ID3D12CommandQueuePtr;
+    using WindowHandle = HWND;
+    using DeviceHandle = ID3D12DevicePtr;
+    using CommandListHandle = ID3D12GraphicsCommandListPtr;
+    using CommandQueueHandle = ID3D12CommandQueuePtr;
     using ApiCommandQueueType = D3D12_COMMAND_LIST_TYPE;
     using CommandAllocatorHandle = ID3D12CommandAllocatorPtr;
     using CommandSignatureHandle = ID3D12CommandSignaturePtr;
@@ -98,7 +122,12 @@ namespace Falcor
     using BlendStateHandle = void*;
     using DescriptorSetApiHandle = void*;
 
+    
+#if FALCOR_D3D12_MGPU_AFFINITY
+    static const uint32_t kSwapChainBuffers = 4;
+#else
     static const uint32_t kSwapChainBuffers = 3;
+#endif
 
     inline constexpr uint32_t getMaxViewportCount() { return D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE; }
     /*! @} */
@@ -111,3 +140,8 @@ namespace Falcor
 
 #define UNSUPPORTED_IN_D3D12(msg_) {Falcor::logWarning(msg_ + std::string(" is not supported in D3D12. Ignoring call."));}
 #define D3Dx(a) D3D12_##a
+
+
+#if FALCOR_D3D12_MGPU_AFFINITY
+#include <d3dx12affinity_rename.h>
+#endif
