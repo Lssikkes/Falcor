@@ -1,7 +1,11 @@
 @echo on
+
+if not "%NVDTE%"=="" goto buildnvdte
+
 if "%1"=="release" goto findVS
 if "%1"=="debug" goto findVS
 echo Usage: buildFalcor.bat ^<release^|debug^>
+
 
 exit /B 1
 
@@ -19,3 +23,8 @@ exit /B 0
 :buildFailed
 echo Build failed...
 exit /B 1
+
+:buildnvdte
+call %NVDTE%\Core\Windows\setenv.bat
+call exec export MSBUILD_CONFIG=DebugD3D12; vs-msbuildtool
+call exec export MSBUILD_CONFIG=ReleaseD3D12; vs-msbuildtool
